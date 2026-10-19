@@ -99,3 +99,24 @@ class Maze:
             self.set_wall(a[0], a[1], W, False)
             self.set_wall(b[0],b[1],E,False)
         return
+
+    def cell_id(self, r: int, c: int) -> int:
+        #二维转一维
+        return r * self.cols + c
+
+    def to_point(self, id: int) -> tuple[int, int]:
+        #一维转二维
+        return id // self.cols, id % self.cols
+
+    #生成迷宫
+    @classmethod
+    def generate(self,rows: int, cols: int,method = "kruskal") -> Maze:
+        if method == "kruskal":
+            from maze.generators.kruskal import generate
+            return generate(rows,cols)
+        elif method == "prim":
+            from maze.generators.prim import generate
+            return generate(rows,cols)
+        else:
+            raise ValueError(f"Unknown generator: {method}")
+

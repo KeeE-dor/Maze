@@ -17,12 +17,31 @@ from __future__ import annotations
 import random
 
 from maze.ds.min_heap import MinHeap
-from maze.model import Maze
+from maze.model import Maze,DELTA
 
 
 def generate(rows: int, cols: int, rng: random.Random | None = None) -> Maze:
-    """生成 rows×cols 的完美迷宫（Prim + 随机权 frontier 边）。
+    if rng is None:
+        rng = random.Random()
+    maze = Maze(rows, cols)
+    heap = MinHeap()
+    visited: set[tuple[int, int]] = set()
+    start_cell = (0,0)
+    visited.add(start_cell)
 
-    TODO 第 4 周：从 (0, 0) 当种子开始生长。
-    """
-    raise NotImplementedError("TODO 第 4 周：Prim 生成")
+    def add_wall(r:int,c:int) -> None:
+        for dr,dc in DELTA.values():
+            nr , nc = r + dr, c + dc
+            if maze.in_bounds(nr,nc) and (nr,nc) not in visited:
+                heap.push((rng.random(),r,c,nr,nc))
+    add_wall(*start_cell)
+
+    total = rows*cols
+    while len(visited) < total and not heap.is_empty():
+        _,r,c,nr,nc = heap.pop()
+        if (nr,nc) not in visited:
+            maze.remove_wall_between((r,c),(nr,nc))
+            visited.add((nr,nc))
+            add_wall(nr,nc)
+
+    return maze

@@ -52,18 +52,21 @@ def demo_path(maze: Maze) -> list[tuple[int, int]]:
 
 
 def main() -> None:
-    maze = carve_demo_maze()
+    # maze = carve_demo_maze()
+    #
+    # print("== 第 1 周演示：硬编码迷宫（终端渲染）==")
+    # console.print_maze(maze)
+    #
+    # print("\n== 带路径高亮（S=起点 E=终点 *=路径）==")
+    # console.print_maze(maze, demo_path(maze))
+    #
+    # print("\n下一步（见 项目计划.md 第 3 周）：")
+    # print("  1. 完成 maze/model.py 里两个第 1 周练习（neighbors / remove_wall_between）")
+    # print("  2. 第 2 周各自实现手写数据结构，pytest 跑绿")
+    # print("  3. 第 3 周接上 kruskal.generate() + dfs 求解，本文件顶部有示例代码")
 
-    print("== 第 1 周演示：硬编码迷宫（终端渲染）==")
+    maze = Maze.generate(10,10,"prim")
     console.print_maze(maze)
-
-    print("\n== 带路径高亮（S=起点 E=终点 *=路径）==")
-    console.print_maze(maze, demo_path(maze))
-
-    print("\n下一步（见 项目计划.md 第 3 周）：")
-    print("  1. 完成 maze/model.py 里两个第 1 周练习（neighbors / remove_wall_between）")
-    print("  2. 第 2 周各自实现手写数据结构，pytest 跑绿")
-    print("  3. 第 3 周接上 kruskal.generate() + dfs 求解，本文件顶部有示例代码")
 
 
 if __name__ == "__main__":

@@ -32,16 +32,44 @@
 from __future__ import annotations
 
 import random
-
 from maze.ds.min_heap import MinHeap
 from maze.ds.union_find import UnionFind
 from maze.model import Maze
 
 
 def generate(rows: int, cols: int, rng: random.Random | None = None) -> Maze:
-    """生成 rows×cols 的完美迷宫（Kruskal + 随机权 + 手写堆/并查集）。
+    if rng is None:
+        rng = random.Random()
+    maze = Maze(rows, cols)
+    total_cells = rows * cols
+    uf = UnionFind(total_cells)
+    heap = MinHeap()
 
-    TODO 第 3 周：按模块 docstring 里的伪码实现。
-    实现后第 5 周的验证脚本应能证明：拆墙数 == rows*cols-1 且全连通。
-    """
-    raise NotImplementedError("TODO 第 3 周：Kruskal 生成")
+    for r in range(rows):
+        for c in range(cols):
+
+            if c + 1 < cols:
+                heap.push((rng.random(), r, c, r, c + 1))
+
+            if r + 1 < rows:
+                heap.push((rng.random(), r, c, r+1, c))
+
+    removed = 0
+    target_removed = total_cells - 1
+    # 当还没拆够 rows*cols - 1 堵墙且堆里还有墙时
+    while removed < target_removed and not heap.is_empty():
+        # 弹出权重最小的一面墙
+        _, ar, ac, br, bc = heap.pop()
+        ia = maze.cell_id(ar, ac)
+        ib = maze.cell_id(br, bc)
+        # 用并查集判断：两端格子是否已经连通？
+        if not uf.connected(ia, ib):
+            # 还没连通：拆除两者之间的墙！
+            maze.remove_wall_between((ar, ac), (br, bc))
+            # 在并查集中将它们合并为一个连通块
+            uf.union(ia, ib)
+            removed += 1
+    return maze
+
+
+
