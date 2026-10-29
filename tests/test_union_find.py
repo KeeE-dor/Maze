@@ -3,11 +3,7 @@
 进阶练习（可选，答辩亮点）：和"朴素对拍"——用 set-of-sets 模拟同样的操作序列，
 随机做上千次 union / connected，手写版的结果必须和朴素版完全一致。
 """
-import pytest
-
 from maze.ds.union_find import UnionFind
-
-pytestmark = pytest.mark.skip(reason="待第 2 周实现 UnionFind 后删除本行")
 
 
 def test_initially_all_separate():

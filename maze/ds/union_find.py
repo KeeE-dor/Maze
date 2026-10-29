@@ -41,13 +41,13 @@ class UnionFind:
         y = self.find(y)
         if x == y:
             return False
+        # 按秩合并：矮树挂到高树下面；只有两棵树一样高时，合并后高度才会 +1
         if self.rank[x] == self.rank[y]:
             self.parent[x] = y
             self.rank[y] += 1
         elif self.rank[x] > self.rank[y]:
             self.parent[y] = x
-            self.rank[x] += 1
         else:
             self.parent[x] = y
-            self.rank[y] += 1
+        self.count -= 1
         return True
