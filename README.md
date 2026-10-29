@@ -8,8 +8,8 @@
 
 ```bash
 pip install -r requirements.txt
-python main.py        # 第 1 周演示：终端迷宫（现在就能跑）
-python -m pytest      # 测试：test_example 全绿；stack/union_find 处于 skip（待实现）
+python main.py        # M1：生成 → DFS 求解 → 终端高亮，一条命令端到端
+python -m pytest      # 46 个测试全绿，无 skip
 ```
 
 ## 目录与分工
@@ -26,13 +26,16 @@ python -m pytest      # 测试：test_example 全绿；stack/union_find 处于 s
 
 ## 进度看板（完成打勾）
 
-- [ ] 第 1 周：环境 + Git 仓库 + 读懂契约 + model.py 两个练习
-- [ ] 第 2 周：A→UnionFind；B→Stack/Queue；pytest 全绿 【基石】
-- [ ] 第 3 周：A→Kruskal；B→DFS 两版；**M1 终端端到端**
+- [x] 第 1 周：环境 + Git 仓库 + 读懂契约 + model.py 两个练习
+- [x] 第 2 周：A→UnionFind；B→Stack/Queue；pytest 全绿 【基石】
+- [x] 第 3 周：A→Kruskal；B→DFS 两版；**M1 终端端到端**
 - [ ] 第 4 周：A→MinHeap 完善 + Prim；B→BFS 两版 + Pygame 静态
 - [ ] 第 5 周：B→回放动画 + 交互；A→正确性验证 + 性能实验；**M2 可演示**
 - [ ] 第 6 周：加分项 + 报告初稿（周三检查点）
 - [ ] 第 7 周：功能冻结 + 报告/PPT 定稿 + 互讲模拟答辩
+
+> 第 2 周末备注（B 补记）：UnionFind 的 count / 按秩合并两处 bug 已顺手修复，
+> MinHeap 仍是 heapq 包装的问题待讨论 → 见 [docs/review-A.md](docs/review-A.md)
 
 ## 契约红线
 
