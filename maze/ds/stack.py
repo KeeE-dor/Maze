@@ -15,21 +15,26 @@ class Stack:
         self._items: list = []
 
     def __len__(self) -> int:
-        """TODO：返回元素个数。"""
-        raise NotImplementedError("TODO 第 2 周")
+        """返回元素个数。O(1)：list 自带长度。"""
+        return len(self._items)
 
     def is_empty(self) -> bool:
-        """TODO：是否为空。"""
-        raise NotImplementedError("TODO 第 2 周")
+        """是否为空。O(1)。"""
+        return not self._items
 
     def push(self, item) -> None:
-        """TODO：压入栈顶。"""
-        raise NotImplementedError("TODO 第 2 周")
+        """压入栈顶。均摊 O(1)：list.append 尾部追加，偶尔触发的扩容代价
+        均摊到每次 append 后仍是常数。"""
+        self._items.append(item)
 
     def pop(self):
-        """弹出并返回栈顶元素；空栈抛 IndexError。TODO。"""
-        raise NotImplementedError("TODO 第 2 周")
+        """弹出并返回栈顶元素；空栈抛 IndexError。均摊 O(1)：尾部删除。"""
+        if not self._items:
+            raise IndexError("pop from empty stack")
+        return self._items.pop()
 
     def peek(self):
-        """返回栈顶元素但不弹出；空栈抛 IndexError。TODO。"""
-        raise NotImplementedError("TODO 第 2 周")
+        """返回栈顶元素但不弹出；空栈抛 IndexError。O(1)。"""
+        if not self._items:
+            raise IndexError("peek from empty stack")
+        return self._items[-1]
