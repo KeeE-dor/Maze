@@ -9,8 +9,6 @@ import pytest
 
 from maze.ds.stack import Stack
 
-pytestmark = pytest.mark.skip(reason="待第 2 周实现 Stack 后删除本行")
-
 
 def test_lifo_order():
     s = Stack()
