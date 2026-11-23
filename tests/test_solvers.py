@@ -1,13 +1,4 @@
-"""求解器验收门（B 同学 · 第 3 周）—— 之后所有求解器（BFS 两版等）都要过这三查。
-
-路径三查（通用合法性）：
-    1. 首尾格正确：path[0]==start 且 path[-1]==end；
-    2. 相邻两步不穿墙：后一格必须在前一格的 neighbors() 里；
-    3. 路径无重复格（简单路径）。
-
-确定性用例用 main.py 的硬编码蛇形迷宫：它是单条走廊，路径唯一，
-两版 DFS 的 path、visited_order、expanded 都可以精确断言。
-"""
+"""DFS 与 BFS 求解器测试。"""
 from __future__ import annotations
 
 import random
@@ -16,40 +7,40 @@ import pytest
 
 from main import carve_demo_maze, demo_path
 from maze.generators import kruskal, prim
-from maze.solvers import dfs
+from maze.model import Maze
+from maze.solvers import bfs, dfs
 
-SOLVERS = {"dfs_recursive": dfs.solve_recursive, "dfs_iterative": dfs.solve_iterative}
+SOLVERS = {
+    "dfs_recursive": dfs.solve_recursive,
+    "dfs_iterative": dfs.solve_iterative,
+    "bfs_queue": bfs.solve_queue,
+    "bfs_recursive": bfs.solve_recursive,
+}
 
 
 def assert_valid_path(maze, result, start=None, end=None) -> None:
-    """三查：首尾正确 / 相邻不穿墙 / 无重复格。found 必须为 True。"""
+    """检查路径首尾正确、相邻步无墙且不含重复格。"""
     start = maze.start if start is None else start
     end = maze.end if end is None else end
     assert result.found
-    assert result.path[0] == start          # 查 1：首格
-    assert result.path[-1] == end           # 查 1：尾格
+    assert result.path[0] == start
+    assert result.path[-1] == end
     for a, b in zip(result.path, result.path[1:]):
-        assert b in maze.neighbors(*a)      # 查 2：相邻且无墙
-    assert len(set(result.path)) == len(result.path)  # 查 3：无重复
+        assert b in maze.neighbors(*a)
+    assert len(set(result.path)) == len(result.path)
 
-
-# ---------- 确定性：蛇形迷宫（路径唯一，可精确断言） ----------
 
 @pytest.mark.parametrize("name", SOLVERS)
 def test_snake_maze_exact_path(name):
-    """单走廊迷宫：显式把终点设为走廊尽头 (5,0)，
-    路径/访问序/扩展数必须精确等于整条走廊。"""
     maze = carve_demo_maze()
     result = SOLVERS[name](maze, end=(5, 0))
     assert result.path == demo_path(maze)
-    assert result.visited_order == demo_path(maze)   # 无分支：访问序就是走廊
+    assert result.visited_order == demo_path(maze)
     assert result.expanded == len(demo_path(maze))
 
 
 @pytest.mark.parametrize("name", SOLVERS)
 def test_snake_maze_default_end_stops_at_end(name):
-    """默认终点是 (5,5)（构造器取右下角），走廊还在它之后延伸 5 格——
-    找到终点必须立刻收手：path 恰为走廊前缀，一格不多。"""
     maze = carve_demo_maze()
     full = demo_path(maze)
     prefix = full[: full.index(maze.end) + 1]
@@ -57,8 +48,6 @@ def test_snake_maze_default_end_stops_at_end(name):
     assert result.path == prefix
     assert result.path[-1] == maze.end
 
-
-# ---------- 通用：随机完美迷宫上的三查 ----------
 
 @pytest.mark.parametrize("name", SOLVERS)
 @pytest.mark.parametrize("gen_name", ["kruskal", "prim"])
@@ -71,16 +60,47 @@ def test_random_mazes_pass_path_checks(name, gen_name, rows, cols):
 
 
 @pytest.mark.parametrize("seed", [1, 2, 3])
-def test_both_versions_agree_on_path(seed):
-    """完美迷宫是树：两点间简单路径唯一，两版 DFS 的 path 必须完全一致。"""
+def test_all_versions_agree_on_perfect_maze_path(seed):
     maze = kruskal.generate(10, 10, rng=random.Random(seed))
-    r1 = dfs.solve_recursive(maze)
-    r2 = dfs.solve_iterative(maze)
-    assert r1.path == r2.path
-    assert r1.found and r2.found
+    r_dfs_r = dfs.solve_recursive(maze)
+    r_dfs_i = dfs.solve_iterative(maze)
+    r_bfs_q = bfs.solve_queue(maze)
+    r_bfs_r = bfs.solve_recursive(maze)
+
+    assert r_dfs_r.found and r_dfs_i.found and r_bfs_q.found and r_bfs_r.found
+    assert r_dfs_r.path == r_dfs_i.path == r_bfs_q.path == r_bfs_r.path
+    assert r_bfs_q.visited_order == r_bfs_r.visited_order
+    assert r_bfs_q.expanded == r_bfs_r.expanded
 
 
-# ---------- 边界 ----------
+def test_bfs_finds_shortest_path_on_cyclic_maze():
+    """含环迷宫中，BFS 必须找到 7 格最短路并短于 DFS 的 11 格绕路。"""
+    maze = Maze(4, 4)
+    short_edges = [
+        ((0, 0), (1, 0)), ((1, 0), (2, 0)), ((2, 0), (3, 0)),
+        ((3, 0), (3, 1)), ((3, 1), (3, 2)), ((3, 2), (3, 3)),
+    ]
+    long_edges = [
+        ((0, 0), (0, 1)), ((0, 1), (0, 2)), ((0, 2), (0, 3)),
+        ((0, 3), (1, 3)), ((1, 3), (1, 2)), ((1, 2), (1, 1)),
+        ((1, 1), (2, 1)), ((2, 1), (2, 2)), ((2, 2), (2, 3)), ((2, 3), (3, 3)),
+    ]
+    for a, b in short_edges + long_edges:
+        maze.remove_wall_between(a, b)
+
+    r_bfs_q = bfs.solve_queue(maze)
+    r_bfs_r = bfs.solve_recursive(maze)
+    r_dfs_r = dfs.solve_recursive(maze)
+    r_dfs_i = dfs.solve_iterative(maze)
+
+    for res in (r_bfs_q, r_bfs_r, r_dfs_r, r_dfs_i):
+        assert_valid_path(maze, res)
+
+    assert len(r_bfs_q.path) == 7
+    assert len(r_bfs_r.path) == 7
+    assert len(r_dfs_r.path) == 11
+    assert len(r_bfs_q.path) < len(r_dfs_r.path)
+
 
 @pytest.mark.parametrize("name", SOLVERS)
 def test_start_equals_end(name):
@@ -94,12 +114,11 @@ def test_start_equals_end(name):
 
 @pytest.mark.parametrize("name", SOLVERS)
 def test_unreachable_returns_not_found(name):
-    """全墙迷宫：除起点外哪都去不了，found=False 且 path 为空。"""
     maze = carve_demo_maze()
-    for r in range(maze.rows):          # 重新封死所有墙（制造不可达）
+    for r in range(maze.rows):
         for c in range(maze.cols):
             maze.walls[r][c] = 15
     result = SOLVERS[name](maze, end=(maze.rows - 1, maze.cols - 1))
     assert not result.found
     assert result.path == []
-    assert result.expanded == 1         # 只扩展了起点
+    assert result.expanded == 1

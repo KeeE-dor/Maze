@@ -1,1 +1,1 @@
-"""渲染层：只消费 Maze 与可选的 SolveResult，永不修改它们。"""
+"""迷宫渲染模块（只读 Maze 与 SolveResult）。"""

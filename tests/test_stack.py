@@ -1,10 +1,4 @@
-"""Stack 的单元测试示范（B 同学第 2 周实现 stack.py 后，删除顶部 skip 行跑绿）。
-
-写测试的三段套路（后面的 Queue/MinHeap/UnionFind 照此自己写）：
-    1. 正常流程：push 一串、pop 出来验证 LIFO 顺序
-    2. 边界：空栈 pop/peek 的异常行为
-    3. 性质：peek 不弹出、len 随动
-"""
+"""Stack 单元测试。"""
 import pytest
 
 from maze.ds.stack import Stack

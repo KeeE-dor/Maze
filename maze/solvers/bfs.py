@@ -1,40 +1,99 @@
-"""BFS 广度优先求解（B 同学 · 第 4 周）—— 队列版 + 按层递归版。
-
-BFS 按"离起点的距离"一层层向外扩散，因此第一次摸到终点时，走过的层数
-就是最短距离 —— path 一定是最短路。
-答辩题"为什么"：反证——若存在更短路径，它上面必有一格比当前格更早入队，
-那一次扩展就先到终点了。
-
-solve_queue：标准版，必须用 maze/ds/queue.py 的手写队列；
-    出队一格 -> 标记/记录 -> 未访问邻居全部入队并记 parent。
-    终点出队时停（不是入队时停也行，但出队时停的判据更简单）。
-
-solve_recursive：课程要求的"递归 BFS"。BFS 本质基于队列，这里的做法是
-【按层递归】—— 每次调用处理完当前一整层，把收集到的下一层作为列表传给自己：
-
-    def _layer(frontier, ...):
-        next_frontier = []
-        for cur in frontier:
-            ...处理 cur，收集它未访问的邻居...
-        if next_frontier:
-            _layer(next_frontier, ...)
-
-递归深度 = 最短路的层数（迷宫路径长时会深，同样吃 Python 递归上限），
-这是它和队列版的本质差别 —— 队列版把"层"存在堆外的队列里，递归版存在调用栈里。
-答辩务必能讲清这一点。
-"""
+"""BFS 迷宫求解：提供基于手写 Queue 的队列版与按层递归版，保证求得最短路径。"""
 from __future__ import annotations
 
+from maze.ds.queue import Queue
 from maze.model import Maze, SolveResult
 
 
-def solve_queue(maze: Maze, start: tuple[int, int] | None = None,
-                end: tuple[int, int] | None = None) -> SolveResult:
-    """TODO 第 4 周：队列版 BFS（手写 Queue + parent 回溯）。"""
-    raise NotImplementedError("TODO 第 4 周：队列版 BFS")
+def _reconstruct_path(
+    parent: dict[tuple[int, int], tuple[int, int] | None],
+    end: tuple[int, int],
+) -> list[tuple[int, int]]:
+    path: list[tuple[int, int]] = []
+    node: tuple[int, int] | None = end
+    while node is not None:
+        path.append(node)
+        node = parent[node]
+    path.reverse()
+    return path
 
 
-def solve_recursive(maze: Maze, start: tuple[int, int] | None = None,
-                    end: tuple[int, int] | None = None) -> SolveResult:
-    """TODO 第 4 周：按层递归版 BFS（实现思路见模块 docstring）。"""
-    raise NotImplementedError("TODO 第 4 周：按层递归 BFS")
+def solve_queue(
+    maze: Maze,
+    start: tuple[int, int] | None = None,
+    end: tuple[int, int] | None = None,
+) -> SolveResult:
+    """队列版 BFS（手写循环队列）。O(V + E) = O(cells)，空间 O(cells)。"""
+    start = maze.start if start is None else start
+    end = maze.end if end is None else end
+
+    visited: set[tuple[int, int]] = {start}
+    visited_order: list[tuple[int, int]] = [start]
+    parent: dict[tuple[int, int], tuple[int, int] | None] = {start: None}
+    queue = Queue()
+    queue.enqueue(start)
+    expanded = 0
+    found = False
+
+    while not queue.is_empty():
+        cur = queue.dequeue()
+        expanded += 1
+        if cur == end:
+            found = True
+            break
+        for nb in maze.neighbors(*cur):
+            if nb not in visited:
+                visited.add(nb)
+                visited_order.append(nb)
+                parent[nb] = cur
+                queue.enqueue(nb)
+
+    path = _reconstruct_path(parent, end) if found else []
+    return SolveResult(
+        path=path,
+        visited_order=visited_order,
+        found=found,
+        expanded=expanded,
+    )
+
+
+def solve_recursive(
+    maze: Maze,
+    start: tuple[int, int] | None = None,
+    end: tuple[int, int] | None = None,
+) -> SolveResult:
+    """按层递归版 BFS：逐层收集 next_frontier 递归，调用栈深度等于最短路层数。O(V + E)。"""
+    start = maze.start if start is None else start
+    end = maze.end if end is None else end
+
+    visited: set[tuple[int, int]] = {start}
+    visited_order: list[tuple[int, int]] = [start]
+    parent: dict[tuple[int, int], tuple[int, int] | None] = {start: None}
+    expanded = 0
+    found = False
+
+    def _layer(frontier: list[tuple[int, int]]) -> None:
+        nonlocal expanded, found
+        next_frontier: list[tuple[int, int]] = []
+        for cur in frontier:
+            expanded += 1
+            if cur == end:
+                found = True
+                return
+            for nb in maze.neighbors(*cur):
+                if nb not in visited:
+                    visited.add(nb)
+                    visited_order.append(nb)
+                    parent[nb] = cur
+                    next_frontier.append(nb)
+        if next_frontier:
+            _layer(next_frontier)
+
+    _layer([start])
+    path = _reconstruct_path(parent, end) if found else []
+    return SolveResult(
+        path=path,
+        visited_order=visited_order,
+        found=found,
+        expanded=expanded,
+    )
