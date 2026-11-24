@@ -1,18 +1,16 @@
 # 迷宫系统（数据结构大作业）
 
-2 人团队 · Python + Pygame · 核心数据结构与算法全部手写。
+2 人团队 · Python + PySide6 (Qt) · 核心数据结构与算法全部手写。
 
 **计划、接口契约、答辩准备 → 见 [项目计划.md](项目计划.md)（先读它，特别是第三节契约）**
 
-> 说明：本项目计划中的核心部分（第 1–5 周全部数据结构、生成/求解算法、Pygame 回放动画交互、正确性验证、性能实验及第 6–7 周非扩展报告素材）已全部完成；第 6 周两项扩展加分项（3D 迷宫建模/复杂度专章、BFS/DFS 同屏对比看板）按要求暂未实现。
+> 说明：本项目在计划核心部分基础上，已完成 PySide6 (Qt) 交互图形界面（含 60 FPS 迷宫生成动画、手动探索、六种算法同屏对比与回溯动画）、含环迷宫与带权泥地地形、以及 4 种生成算法与 6 种求解算法。
 
 ## 快速开始
 
 ```bash
 pip install -r requirements.txt
 python main.py                                    # 默认启动 Qt 界面：配置尺寸/生成方式/拆环/泥地 → 生成动画 / 手动走 / 多算法同屏对比
-python main.py --pygame                           # Pygame 动画回放 + 键盘交互（R/G/Space/上下键/P/S/Q）
-python main.py --pygame --static                  # Pygame 静态渲染
 python main.py --console --gen division --loop-ratio 0.1 --mud-ratio 0.2 --seed 42  # 终端模式：6 求解器对比 + 路径高亮
 python scripts/verify.py                          # 4 种生成器完美迷宫 + 含环图 BFS<=DFS + 带权图 A*=Dijkstra<=BFS 校验
 python scripts/benchmark.py                       # 10/20/50/100 尺寸性能实验，输出 docs/benchmark.csv
@@ -34,7 +32,7 @@ python -m pytest                                  # 全量单元测试，无 ski
 | `maze/ds/stack.py`、`maze/ds/queue.py` | 手写栈、手写循环队列 | B |
 | `maze/generators/` | Kruskal、Prim、递归回溯、递归分割法迷宫生成 | A |
 | `maze/solvers/` | DFS 两版、BFS 两版、Dijkstra、A*（均用自研数据结构） | B |
-| `maze/render/console.py`、`pygame_view.py`、`qt_view.py` | 终端渲染 / Pygame 动画 / PySide6 Qt 交互界面 | B |
+| `maze/render/console.py`、`qt_view.py` | 终端渲染 / PySide6 Qt 交互界面 | B |
 | `scripts/verify.py`、`scripts/benchmark.py` | 第 5 周正确性验证三件套 & 性能实验脚本 | A |
 | `docs/report-notes.md`、`docs/benchmark.csv` | 实验报告素材、答辩 Q&A 与基准测试数据 | 共同 |
 | `tests/` | 单元测试 | 各自 |

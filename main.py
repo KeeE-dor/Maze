@@ -2,8 +2,6 @@
 
 常用运行方式：
     python main.py                              # 默认启动 Qt 图形界面（含生成动画 + 手动走 + 多算法对比）
-    python main.py --pygame                     # 启动 Pygame 动画与键盘交互窗口
-    python main.py --pygame --static            # Pygame 静态渲染
     python main.py --console --seed 42          # 终端模式：6 种求解器对比 + 路径高亮
     python main.py --console --gen division --loop-ratio 0.1 --mud-ratio 0.2 --seed 42
 
@@ -43,7 +41,7 @@ GENERATORS: list[tuple[str, str, Callable[..., Maze]]] = [
     ("division", "递归分割法（房间筑墙）", recursive_division.generate),
 ]
 
-# 支持切换的求解算法注册表（用于终端与 Pygame 模式）
+# 支持切换的求解算法注册表（用于终端模式）
 SOLVERS: list[tuple[str, str, Callable[[Maze], SolveResult]]] = [
     ("dfs_iterative", "DFS-Iter", dfs.solve_iterative),
     ("dfs_recursive", "DFS-Rec", dfs.solve_recursive),
@@ -100,7 +98,7 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         "--solver",
         choices=[key for key, _, _ in SOLVERS],
         default="astar",
-        help="迷宫求解算法（默认 astar，用于终端与 Pygame 模式）",
+        help="迷宫求解算法（默认 astar，用于终端模式）",
     )
     parser.add_argument(
         "--loop-ratio",
@@ -116,10 +114,6 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     )
     parser.add_argument("--seed", type=int, default=None, help="随机种子（可选）")
     parser.add_argument("--console", action="store_true", help="终端模式（不启动图形界面）")
-    parser.add_argument("--pygame", action="store_true", help="使用 Pygame 演示窗口")
-    parser.add_argument("--static", action="store_true", help="Pygame 静态渲染模式")
-    parser.add_argument("--cell-px", type=int, default=28, help="Pygame 单元格像素大小（默认 28）")
-    parser.add_argument("--fps", type=int, default=60, help="Pygame 刷新帧率（默认 60）")
     return parser.parse_args(argv)
 
 
@@ -162,73 +156,6 @@ def _run_console(
     console.print_maze(maze, chosen.path)
 
 
-def _run_pygame(args: argparse.Namespace) -> None:
-    """启动原有的 Pygame 动画交互窗口；若 Pygame 加载失败则降级为终端模式。"""
-    gen_idx = [k for k, _, _ in GENERATORS].index(args.gen)
-    solver_idx = [k for k, _, _ in SOLVERS].index(args.solver)
-    rng = random.Random(args.seed) if args.seed is not None else random.Random()
-
-    def build_status() -> str:
-        _, g_label, _ = GENERATORS[gen_idx]
-        _, s_label, _ = SOLVERS[solver_idx]
-        return f"Gen: {g_label} | Solver: {s_label}"
-
-    def make_maze() -> Maze:
-        _, _, gen_fn = GENERATORS[gen_idx]
-        m = gen_fn(args.rows, args.cols, rng=rng)
-        if args.loop_ratio > 0:
-            m.add_loops(args.loop_ratio, rng=rng)
-        if args.mud_ratio > 0:
-            m.apply_weighted_terrain(args.mud_ratio, rng=rng)
-        return m
-
-    def run_solver(m: Maze) -> SolveResult:
-        _, _, solve_fn = SOLVERS[solver_idx]
-        return solve_fn(m)
-
-    maze = make_maze()
-    try:
-        from maze.render import pygame_view
-    except ImportError as exc:
-        print(f"Pygame 加载失败 ({exc})，自动降级为终端模式。")
-        _run_console(
-            maze,
-            GENERATORS[gen_idx][1],
-            args.solver,
-            is_perfect=(args.loop_ratio <= 0 and not maze.has_weighted_terrain()),
-        )
-        return
-
-    result = run_solver(maze)
-
-    def on_regenerate() -> tuple[Maze, SolveResult, str]:
-        m = make_maze()
-        return m, run_solver(m), build_status()
-
-    def on_switch_generator() -> tuple[Maze, SolveResult, str]:
-        nonlocal gen_idx
-        gen_idx = (gen_idx + 1) % len(GENERATORS)
-        m = make_maze()
-        return m, run_solver(m), build_status()
-
-    def on_switch_solver(m: Maze) -> tuple[SolveResult, str]:
-        nonlocal solver_idx
-        solver_idx = (solver_idx + 1) % len(SOLVERS)
-        return run_solver(m), build_status()
-
-    pygame_view.run(
-        maze,
-        result,
-        cell_px=args.cell_px,
-        fps=args.fps,
-        animate=not args.static,
-        status_text=build_status(),
-        on_regenerate=on_regenerate,
-        on_switch_solver=on_switch_solver,
-        on_switch_generator=on_switch_generator,
-    )
-
-
 def main(argv: list[str] | None = None) -> None:
     args = parse_args(argv)
     gen_idx = [k for k, _, _ in GENERATORS].index(args.gen)
@@ -247,10 +174,6 @@ def main(argv: list[str] | None = None) -> None:
             args.solver,
             is_perfect=(args.loop_ratio <= 0 and not maze.has_weighted_terrain()),
         )
-        return
-
-    if args.pygame:
-        _run_pygame(args)
         return
 
     # 默认启动 Qt（PySide6）图形界面：先弹配置窗询问尺寸、生成方式与含环/泥地配置，再进入交互主窗口
