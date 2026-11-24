@@ -10,13 +10,20 @@
 
 ```bash
 pip install -r requirements.txt
-python main.py                                    # M2：Pygame 动画回放 + 键盘交互（R/G/Space/上下键/P/S/Q）
-python main.py --static                           # Pygame 静态渲染
-python main.py --console --rows 12 --cols 20 --seed 42  # 终端模式：4 求解器对比 + 路径高亮
-python scripts/verify.py                          # 完美迷宫校验 + 防穿墙校验 + 含环图 BFS 最短路交叉验证
+python main.py                                    # 默认启动 Qt 界面：配置尺寸/生成方式/拆环/泥地 → 生成动画 / 手动走 / 多算法同屏对比
+python main.py --pygame                           # Pygame 动画回放 + 键盘交互（R/G/Space/上下键/P/S/Q）
+python main.py --pygame --static                  # Pygame 静态渲染
+python main.py --console --gen division --loop-ratio 0.1 --mud-ratio 0.2 --seed 42  # 终端模式：6 求解器对比 + 路径高亮
+python scripts/verify.py                          # 4 种生成器完美迷宫 + 含环图 BFS<=DFS + 带权图 A*=Dijkstra<=BFS 校验
 python scripts/benchmark.py                       # 10/20/50/100 尺寸性能实验，输出 docs/benchmark.csv
-python -m pytest                                  # 100 个测试全绿，无 skip
+python -m pytest                                  # 全量单元测试，无 skip
 ```
+
+### Qt 界面操作说明
+- 启动弹窗可配置迷宫行数/列数（`2~60`）、生成算法（`Kruskal` / `Prim` / `递归回溯` / `递归分割法`）、**拆环比例**（`0~40%`）以及**泥地比例**（`0~50%`，泥地通行代价为 5）。
+- **生成动画**：60 FPS 逐堵拆墙（或递归分割筑墙）可视化，支持调速、拖动进度条及 `→` / `←` 单步控制。
+- **自己试着走**：方向键或 `W/A/S/D` 移动，实时统计步数与累计地形代价，并与最优步数/最优代价对比。
+- **让程序走（算法同屏对比）**：左右面板可自由选择 `BFS`（队列/递归）、`DFS`（递归回溯动画/非递归）、`A*`、`Dijkstra` 任意组合同屏步进对比；按 `→` / `↓` 前进一步，`←` / `↑` 回退一步，`空格` 播放/暂停，`Home` / `End` 跳转起终点。
 
 ## 目录与分工
 
@@ -25,12 +32,12 @@ python -m pytest                                  # 100 个测试全绿，无 sk
 | `maze/model.py` | Maze + SolveResult **接口契约**，两人共同维护 | 共同 |
 | `maze/ds/union_find.py`、`maze/ds/min_heap.py` | 手写并查集、手写二叉最小堆 | A |
 | `maze/ds/stack.py`、`maze/ds/queue.py` | 手写栈、手写循环队列 | B |
-| `maze/generators/` | Kruskal、Prim 迷宫生成 | A |
-| `maze/solvers/` | DFS 两版、BFS 两版 | B |
-| `maze/render/console.py`、`maze/render/pygame_view.py` | 终端渲染 / Pygame 回放动画与交互 | B |
+| `maze/generators/` | Kruskal、Prim、递归回溯、递归分割法迷宫生成 | A |
+| `maze/solvers/` | DFS 两版、BFS 两版、Dijkstra、A*（均用自研数据结构） | B |
+| `maze/render/console.py`、`pygame_view.py`、`qt_view.py` | 终端渲染 / Pygame 动画 / PySide6 Qt 交互界面 | B |
 | `scripts/verify.py`、`scripts/benchmark.py` | 第 5 周正确性验证三件套 & 性能实验脚本 | A |
 | `docs/report-notes.md`、`docs/benchmark.csv` | 实验报告素材、答辩 Q&A 与基准测试数据 | 共同 |
-| `tests/` | 单元测试（100 passed） | 各自 |
+| `tests/` | 单元测试 | 各自 |
 
 ## 进度看板（完成打勾）
 

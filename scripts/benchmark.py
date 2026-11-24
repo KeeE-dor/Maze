@@ -1,4 +1,7 @@
-"""迷宫生成与求解性能基准测试脚本，结果导出到 CSV 并打印汇总表。
+"""迷宫生成与求解性能基准测试脚本。
+
+在多种尺寸（默认 10 / 20 / 50 / 100）下，分别测试 Kruskal / Prim 生成器与四种求解器的耗时、
+expanded 扩展节点数、路径长度与死胡同数量，结果导出为 CSV 并打印平均值汇总表。
 
 运行：python scripts/benchmark.py
 """
@@ -16,15 +19,17 @@ ROOT_DIR = Path(__file__).resolve().parent.parent
 if str(ROOT_DIR) not in sys.path:
     sys.path.insert(0, str(ROOT_DIR))
 
-from maze.generators import kruskal, prim
+from maze.generators import kruskal, prim, recursive_backtracker, recursive_division
 from maze.model import Maze
-from maze.solvers import bfs, dfs
+from maze.solvers import astar, bfs, dfs, dijkstra
 
 sys.setrecursionlimit(10**6)
 
 GENERATORS = [
     ("kruskal", kruskal.generate),
     ("prim", prim.generate),
+    ("backtracker", recursive_backtracker.generate),
+    ("division", recursive_division.generate),
 ]
 
 SOLVERS = [
@@ -32,11 +37,13 @@ SOLVERS = [
     ("dfs_iterative", dfs.solve_iterative),
     ("bfs_queue", bfs.solve_queue),
     ("bfs_recursive", bfs.solve_recursive),
+    ("dijkstra", dijkstra.solve),
+    ("astar", astar.solve),
 ]
 
 
 def count_dead_ends(maze: Maze) -> int:
-    """统计只有 1 个可达邻居的死胡同数量。"""
+    """统计迷宫中“死胡同”（四周只有 1 个方向能走通的格子）的数量。"""
     dead_ends = 0
     for r in range(maze.rows):
         for c in range(maze.cols):
@@ -51,11 +58,12 @@ def run_benchmark(
     base_seed: int,
     out_path: Path,
 ) -> list[dict]:
-    """执行多尺寸多轮基准测试并将结果写入 out_path。"""
+    """运行多尺寸多轮实验，记录耗时与指标并写入 CSV 文件。"""
     rows_out: list[dict] = []
 
     for size in sizes:
         for trial in range(1, trials + 1):
+            # 同一 (size, trial) 使用相同种子，保证 Kruskal 和 Prim 在同一起跑线上对比
             seed = base_seed + size * 100 + trial
             for gen_name, gen_fn in GENERATORS:
                 rng = random.Random(seed)
@@ -64,6 +72,7 @@ def run_benchmark(
                 gen_ms = (time.perf_counter() - t0) * 1000.0
                 dead_ends = count_dead_ends(maze)
 
+                # 在同一张生成的迷宫上，依次跑四种求解器并记录各自指标
                 for solver_name, solve_fn in SOLVERS:
                     t1 = time.perf_counter()
                     res = solve_fn(maze)
@@ -109,7 +118,7 @@ def run_benchmark(
 
 
 def print_summary(rows: list[dict]) -> None:
-    """按尺寸、生成器和求解器分组打印均值表。"""
+    """按 (尺寸, 生成器, 求解器) 分组计算平均值，并打印为 Markdown 表格。"""
     groups: dict[tuple[int, str, str], list[dict]] = defaultdict(list)
     for row in rows:
         groups[(row["size"], row["generator"], row["solver"])].append(row)
